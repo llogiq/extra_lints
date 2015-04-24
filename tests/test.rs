@@ -1,9 +1,21 @@
 
 #![feature(plugin)]
+#![feature(box_syntax)]
 #![plugin(eq_op)]
 
-#[deny(eq_op)]
+fn id(x : bool) -> bool {
+	x
+}
+
 #[test]
-fn test_simple() {
-	if 1 == 1 { print!("No"); }
+fn test() {
+	assert!(1 == 1);
+	assert!(box 1 == box 1 || (1) < (1));
+	assert!((1 + 1) & (1 + 1) == (1 + 1) & (1 + 1));
+	assert!(!(-(2) < -(2)));
+	assert!(!((10 as f32) > (10 as f32)));
+	assert!(!([1] != [1]));
+	assert!(!((1, 2) != (1, 2)));
+	assert!([1].len() == [1].len());
+	assert!(id(true) && id(true));
 }
