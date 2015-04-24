@@ -44,7 +44,8 @@ impl LintPass for EqOp {
 
 fn is_exp_equal(left : &ast::Expr, right : &ast::Expr) -> bool {
 	match (&left.node, &right.node) {
-		(&ast::ExprBinary(lop, ref ll, ref lr), &ast::ExprBinary(rop, ref rl, ref rr)) => lop.node == rop.node && is_exp_equal(ll, rl) && is_exp_equal(lr, rr),
+		(&ast::ExprBinary(ref lop, ref ll, ref lr), &ast::ExprBinary(ref rop, ref rl, ref rr)) => lop.node == rop.node &&
+			(is_exp_equal(ll, rl) && is_exp_equal(lr, rr) || is_commutative(lop) && is_exp_equal(lr, rl) && is_exp_equal(ll, rr)),
 		(&ast::ExprBox(Option::None, ref lboxed), &ast::ExprBox(Option::None, ref rboxed)) => is_exp_equal(lboxed, rboxed),
 		(&ast::ExprBox(Option::Some(ref lpl), ref lboxedpl), &ast::ExprBox(Option::Some(ref rpl), ref rboxedpl)) => is_exp_equal(lpl, rpl) && is_exp_equal(lboxedpl, rboxedpl),
 		(&ast::ExprCall(ref lcallee, ref largs), &ast::ExprCall(ref rcallee, ref rargs)) => is_exp_equal(lcallee, rcallee) && is_exp_vec_equal(largs, rargs),
@@ -202,6 +203,14 @@ fn is_ty_vec_equal(left : &Vec<ptr::P<ast::Ty>>, right : &Vec<ptr::P<ast::Ty>>) 
 
 fn is_exp_vec_equal(left : &Vec<ptr::P<ast::Expr>>, right : &Vec<ptr::P<ast::Expr>>) -> bool {
 	left.len() == right.len() && left.iter().zip(right.iter()).all(|(l, r)| is_exp_equal(l, r))
+}
+
+fn is_commutative(op : &ast::BinOp) -> bool {
+	match op.node {
+		ast::BiAdd | ast::BiMul | ast::BiAnd | ast::BiOr | ast::BiBitXor | ast::BiBitAnd | ast::BiBitOr |
+			ast::BiEq | ast::BiNe => true,
+		_ => false
+	}
 }
 
 fn is_cmp_or_bit(op : &ast::BinOp) -> bool {
