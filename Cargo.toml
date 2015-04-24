@@ -1,5 +1,10 @@
 [package]
 
-name = "extralint"
+name = "extra_lints"
 version = "0.0.1"
 authors = [ "Andre Bogus <bogusandre@gmail.com>" ]
+
+[lib]
+name = "eq_op"
+path = "src/eq_op.rs"
+plugin = true

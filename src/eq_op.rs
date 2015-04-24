@@ -1,3 +1,4 @@
+
 #![staged_api]
 #![crate_type = "dylib"]
 #![crate_type = "rlib"]
@@ -33,7 +34,7 @@ impl LintPass for EqOp {
         // ExprBinary(BinOp, P<Expr>, P<Expr>)
         if let ast::ExprBinary(ref op, ref left, ref right) = e.node {
             if left == right && is_cmp_or_bit(op) {
-                cx.span_lint(EQ_CMP, e.span, &format!("equal expressions as operands to {}", fmt_op(op)));
+                cx.span_lint(EQ_OP, e.span, &format!("equal expressions as operands to {}", fmt_op(op)));
             }
         }
     }
