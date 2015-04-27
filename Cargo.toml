@@ -8,3 +8,7 @@ authors = [ "Andre Bogus <bogusandre@gmail.com>" ]
 name = "eq_op"
 path = "src/eq_op.rs"
 plugin = true
+crate_type = ["dylib"]
+
+[dev-dependencies.compiletest]
+git = "https://github.com/laumann/compiletest-rs.git"

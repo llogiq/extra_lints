@@ -55,6 +55,8 @@ fn is_exp_equal(left : &ast::Expr, right : &ast::Expr) -> bool {
 		(&ast::ExprMethodCall(ref lident, ref lcty, ref lmargs), &ast::ExprMethodCall(ref rident, ref rcty, ref rmargs)) => 
 			lident.node == rident.node && is_ty_vec_equal(lcty, rcty) && is_exp_vec_equal(lmargs, rmargs),
 		(&ast::ExprParen(ref lparen), &ast::ExprParen(ref rparen)) => is_exp_equal(lparen, rparen),
+		(&ast::ExprParen(ref lparen), _) => is_exp_equal(lparen, right),
+		(_, &ast::ExprParen(ref rparen)) => is_exp_equal(left, rparen),
 		(&ast::ExprPath(Option::None, ref lpath), &ast::ExprPath(Option::None, ref rpath)) => is_path_equal(lpath, rpath),
 		(&ast::ExprPath(Option::Some(ref lqself), ref lsubpath), &ast::ExprPath(Option::Some(ref rqself), ref rsubpath)) => 
 			is_qself_equal(lqself, rqself) && is_path_equal(lsubpath, rsubpath),		
