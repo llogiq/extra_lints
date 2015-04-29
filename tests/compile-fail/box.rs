@@ -1,5 +1,6 @@
-#![feature(plugin, box_syntax)]
-#![plugin(eq_op)]
+#![feature(plugin)]
+#![plugin(extra_lints)]
+#![feature(box_syntax)]
 
 #[allow(unused_allocation)]
 #[deny(eq_op)]

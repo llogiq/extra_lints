@@ -1,5 +1,5 @@
 #![feature(plugin)]
-#![plugin(eq_op)]
+#![plugin(extra_lints)]
 
 #[deny(eq_op)]
 fn main() {
@@ -7,5 +7,5 @@ fn main() {
 	//~^ ERROR
 					//~^^ ERROR
 						//~^^^ ERROR
-	(1 + 2) * 3 - 5 < 3 * (2 + 1) - 5; //~ERROR
+	(1 * 2) + (3 * 4) == 1 * 2 + 3 * 4; //~ERROR
 }

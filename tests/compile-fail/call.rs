@@ -1,5 +1,5 @@
 #![feature(plugin)]
-#![plugin(eq_op)]
+#![plugin(extra_lints)]
 
 
 fn id(x : bool) -> bool {

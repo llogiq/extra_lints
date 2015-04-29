@@ -1,6 +1,5 @@
 #![feature(plugin)]
-#![feature(box_syntax)]
-#![plugin(eq_op)]
+#![plugin(extra_lints)]
 
 #[deny(eq_op)]
 fn main() {

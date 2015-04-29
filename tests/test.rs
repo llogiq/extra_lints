@@ -1,5 +1,5 @@
 #![feature(plugin)]
-#![plugin(eq_op)]
+#![plugin(extra_lints)]
 
 use std::cmp::{min,max};
 
@@ -10,9 +10,13 @@ fn test_eq_op() {
 	let x = 2;
 	assert!(x - 1 == 2 - 1); // we don't track state
 	assert!((1 + 2) + 3 == 1 + (2 + 3)); // we don't match associative exprs yet
+	1 + 2 == 2 + 1;
+	min(1, 2) == min(2, 1);
 }
 
 #[test]
-fn test_max_min() {
-	assert!(min(0, max(100, 200)) == 0);
+fn test_bit_masks() {
+	let x = 5;
+	x & 1 == 1;
+	x & 1 > 0;
 }

@@ -3,10 +3,12 @@
 name = "extra_lints"
 version = "0.0.1"
 authors = [ "Andre Bogus <bogusandre@gmail.com>" ]
+license = "MIT"
+keywords = ["lint"]
+description = "Catch more bugs"
 
 [lib]
-name = "eq_op"
-path = "src/eq_op.rs"
+name = "extra_lints"
 plugin = true
 crate_type = ["dylib"]
 
