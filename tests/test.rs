@@ -1,7 +1,7 @@
 #![feature(plugin)]
 #![plugin(extra_lints)]
 
-use std::cmp::{min,max};
+use std::cmp::min;
 
 #[deny(eq_op)]
 #[test]

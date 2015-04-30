@@ -1,9 +1,8 @@
-pub use rustc::plugin::Registry;
-pub use rustc::lint::*;
-pub use syntax::ast::*;
-pub use syntax::ast_util as ast_util;
-pub use syntax::ptr::P;
-pub use syntax::codemap as code;
+use rustc::lint::*;
+use syntax::ast::*;
+use syntax::ast_util as ast_util;
+use syntax::ptr::P;
+use syntax::codemap as code;
 
 declare_lint! {
     EQ_OP,
@@ -30,21 +29,24 @@ impl LintPass for EqOp {
 
 fn is_exp_equal(left : &Expr, right : &Expr) -> bool {
 	match (&left.node, &right.node) {
-		(&ExprBinary(ref lop, ref ll, ref lr), &ExprBinary(ref rop, ref rl, ref rr)) => lop.node == rop.node && is_exp_equal(ll, rl) && is_exp_equal(lr, rr),
-		(&ExprBox(Option::None, ref lboxed), &ExprBox(Option::None, ref rboxed)) => is_exp_equal(lboxed, rboxed),
-		(&ExprBox(Option::Some(ref lpl), ref lboxedpl), &ExprBox(Option::Some(ref rpl), ref rboxedpl)) => is_exp_equal(lpl, rpl) && is_exp_equal(lboxedpl, rboxedpl),
-		(&ExprCall(ref lcallee, ref largs), &ExprCall(ref rcallee, ref rargs)) => is_exp_equal(lcallee, rcallee) && is_exp_vec_equal(largs, rargs),
-		(&ExprCast(ref lcast, ref lty), &ExprCast(ref rcast, ref rty)) => is_ty_equal(lty, rty) && is_exp_equal(lcast, rcast),
-		(&ExprField(ref lfexp, ref lfident), &ExprField(ref rfexp, ref rfident)) => lfident.node == rfident.node && is_exp_equal(lfexp, rfexp),
+		(&ExprBinary(ref lop, ref ll, ref lr), &ExprBinary(ref rop, ref rl, ref rr)) => 
+			lop.node == rop.node && is_exp_equal(ll, rl) && is_exp_equal(lr, rr),
+		(&ExprBox(ref lpl, ref lboxedpl), &ExprBox(ref rpl, ref rboxedpl)) => 
+			both(lpl, rpl, |l, r| is_exp_equal(l, r)) && is_exp_equal(lboxedpl, rboxedpl),
+		(&ExprCall(ref lcallee, ref largs), &ExprCall(ref rcallee, ref rargs)) => 
+			is_exp_equal(lcallee, rcallee) && is_exp_vec_equal(largs, rargs),
+		(&ExprCast(ref lcast, ref lty), &ExprCast(ref rcast, ref rty)) => 
+			is_ty_equal(lty, rty) && is_exp_equal(lcast, rcast),
+		(&ExprField(ref lfexp, ref lfident), &ExprField(ref rfexp, ref rfident)) => 
+			lfident.node == rfident.node && is_exp_equal(lfexp, rfexp),
 		(&ExprLit(ref llit), &ExprLit(ref rlit)) => llit.node == rlit.node,
 		(&ExprMethodCall(ref lident, ref lcty, ref lmargs), &ExprMethodCall(ref rident, ref rcty, ref rmargs)) => 
 			lident.node == rident.node && is_ty_vec_equal(lcty, rcty) && is_exp_vec_equal(lmargs, rmargs),
 		(&ExprParen(ref lparen), &ExprParen(ref rparen)) => is_exp_equal(lparen, rparen),
 		(&ExprParen(ref lparen), _) => is_exp_equal(lparen, right),
 		(_, &ExprParen(ref rparen)) => is_exp_equal(left, rparen),
-		(&ExprPath(Option::None, ref lpath), &ExprPath(Option::None, ref rpath)) => is_path_equal(lpath, rpath),
-		(&ExprPath(Option::Some(ref lqself), ref lsubpath), &ExprPath(Option::Some(ref rqself), ref rsubpath)) => 
-			is_qself_equal(lqself, rqself) && is_path_equal(lsubpath, rsubpath),		
+		(&ExprPath(ref lqself, ref lsubpath), &ExprPath(ref rqself, ref rsubpath)) => 
+			both(lqself, rqself, |l, r| is_qself_equal(l, r)) && is_path_equal(lsubpath, rsubpath),		
 		(&ExprTup(ref ltup), &ExprTup(ref rtup)) => is_exp_vec_equal(ltup, rtup),
 		(&ExprUnary(lunop, ref lparam), &ExprUnary(runop, ref rparam)) => lunop == runop && is_exp_equal(lparam, rparam), 
 		(&ExprVec(ref lvec), &ExprVec(ref rvec)) => is_exp_vec_equal(lvec, rvec),
@@ -67,9 +69,11 @@ fn is_qself_equal(left : &QSelf, right : &QSelf) -> bool {
 fn is_ty_equal(left : &Ty, right : &Ty) -> bool {
 	match (&left.node, &right.node) {
 	(&TyVec(ref lvec), &TyVec(ref rvec)) => is_ty_equal(lvec, rvec),
-	(&TyFixedLengthVec(ref lfvty, ref lfvexp), &TyFixedLengthVec(ref rfvty, ref rfvexp)) => is_ty_equal(lfvty, rfvty) && is_exp_equal(lfvexp, rfvexp),
+	(&TyFixedLengthVec(ref lfvty, ref lfvexp), &TyFixedLengthVec(ref rfvty, ref rfvexp)) => 
+		is_ty_equal(lfvty, rfvty) && is_exp_equal(lfvexp, rfvexp),
 	(&TyPtr(ref lmut), &TyPtr(ref rmut)) => is_mut_ty_equal(lmut, rmut),
-	(&TyRptr(Option::None, ref lrmut), &TyRptr(Option::None, ref rrmut)) => is_mut_ty_equal(lrmut, rrmut),
+	(&TyRptr(ref ltime, ref lrmut), &TyRptr(ref rtime, ref rrmut)) => 
+		both(ltime, rtime, is_lifetime_equal) && is_mut_ty_equal(lrmut, rrmut),
 	(&TyBareFn(ref lbare), &TyBareFn(ref rbare)) => is_bare_fn_ty_equal(lbare, rbare),
     (&TyTup(ref ltup), &TyTup(ref rtup)) => is_ty_vec_equal(ltup, rtup),
 	(&TyPath(Option::None, ref lpath), &TyPath(Option::None, ref rpath)) => is_path_equal(lpath, rpath),
@@ -87,14 +91,16 @@ fn is_ty_equal(left : &Ty, right : &Ty) -> bool {
 
 fn is_param_bound_equal(left : &TyParamBound, right : &TyParamBound) -> bool {
 	match(left, right) {
-	(&TraitTyParamBound(ref lpoly, ref lmod), &TraitTyParamBound(ref rpoly, ref rmod)) => lmod == rmod && is_poly_traitref_equal(lpoly, rpoly),
+	(&TraitTyParamBound(ref lpoly, ref lmod), &TraitTyParamBound(ref rpoly, ref rmod)) => 
+		lmod == rmod && is_poly_traitref_equal(lpoly, rpoly),
     (&RegionTyParamBound(ref ltime), &RegionTyParamBound(ref rtime)) => is_lifetime_equal(ltime, rtime),
     _ => false
 	}
 }
 
 fn is_poly_traitref_equal(left : &PolyTraitRef, right : &PolyTraitRef) -> bool {
-	is_lifetimedef_vec_equal(&left.bound_lifetimes, &right.bound_lifetimes) && is_path_equal(&left.trait_ref.path, &right.trait_ref.path)
+	is_lifetimedef_vec_equal(&left.bound_lifetimes, &right.bound_lifetimes) && 
+		is_path_equal(&left.trait_ref.path, &right.trait_ref.path)
 }
 
 fn is_param_bounds_equal(left : &TyParamBounds, right : &TyParamBounds) -> bool {
@@ -106,11 +112,13 @@ fn is_mut_ty_equal(left : &MutTy, right : &MutTy) -> bool {
 }
 
 fn is_bare_fn_ty_equal(left : &BareFnTy, right : &BareFnTy) -> bool {
-	left.unsafety == right.unsafety && left.abi == right.abi && is_lifetimedef_vec_equal(&left.lifetimes, &right.lifetimes) && is_fndecl_equal(&left.decl, &right.decl)
+	left.unsafety == right.unsafety && left.abi == right.abi && 
+		is_lifetimedef_vec_equal(&left.lifetimes, &right.lifetimes) && is_fndecl_equal(&left.decl, &right.decl)
 } 
 
 fn is_fndecl_equal(left : &P<FnDecl>, right : &P<FnDecl>) -> bool {
-	left.variadic == right.variadic && is_arg_vec_equal(&left.inputs, &right.inputs) && is_fnret_ty_equal(&left.output, &right.output)
+	left.variadic == right.variadic && is_arg_vec_equal(&left.inputs, &right.inputs) && 
+		is_fnret_ty_equal(&left.output, &right.output)
 }
 
 fn is_fnret_ty_equal(left : &FunctionRetTy, right : &FunctionRetTy) -> bool {
@@ -134,7 +142,8 @@ fn is_pat_equal(left : &Pat, right : &Pat) -> bool {
 	(&PatWild(lwild), &PatWild(rwild)) => lwild == rwild,
 	(&PatIdent(ref lmode, ref lident, Option::None), &PatIdent(ref rmode, ref rident, Option::None)) =>
 		lmode == rmode && is_ident_equal(&lident.node, &rident.node),
-	(&PatIdent(ref lmode, ref lident, Option::Some(ref lpat)), &PatIdent(ref rmode, ref rident, Option::Some(ref rpat))) =>
+	(&PatIdent(ref lmode, ref lident, Option::Some(ref lpat)), 
+			&PatIdent(ref rmode, ref rident, Option::Some(ref rpat))) =>
 		lmode == rmode && is_ident_equal(&lident.node, &rident.node) && is_pat_equal(lpat, rpat),
     (&PatEnum(ref lpath, Option::None), &PatEnum(ref rpath, Option::None)) => is_path_equal(lpath, rpath),
     (&PatEnum(ref lpath, Option::Some(ref lenum)), &PatEnum(ref rpath, Option::Some(ref renum))) => 
@@ -161,7 +170,8 @@ fn is_spanned_fieldpat_vec_equal(left : &Vec<code::Spanned<FieldPat>>, right : &
 }
 
 fn is_fieldpat_equal(left : &FieldPat, right : &FieldPat) -> bool {
-	left.is_shorthand == right.is_shorthand && is_ident_equal(&left.ident, &right.ident) && is_pat_equal(&left.pat, &right.pat) 
+	left.is_shorthand == right.is_shorthand && is_ident_equal(&left.ident, &right.ident) && 
+		is_pat_equal(&left.pat, &right.pat) 
 }
 
 fn is_ident_equal(left : &Ident, right : &Ident) -> bool {
@@ -190,6 +200,10 @@ fn is_ty_vec_equal(left : &Vec<P<Ty>>, right : &Vec<P<Ty>>) -> bool {
 
 fn over<X, F>(left: &[X], right: &[X], mut eq_fn: F) -> bool where F: FnMut(&X, &X) -> bool {
     left.len() == right.len() && left.iter().zip(right).all(|(x, y)| eq_fn(x, y))
+}
+
+fn both<X, F>(l: &Option<X>, r: &Option<X>, mut eq_fn : F) -> bool where F: FnMut(&X, &X) -> bool {
+	if l.is_none() { r.is_none() } else { r.is_some() && eq_fn(l.as_ref().unwrap(), &r.as_ref().unwrap()) }
 }
 
 fn is_cmp_or_bit(op : &BinOp) -> bool {
