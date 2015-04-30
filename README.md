@@ -1,4 +1,9 @@
-# extra_lints
+# extra_lints is now part of [rust-clippy](https://github.com/Manishearth/rust-clippy)
+
+Manish has pulled my code into [rust-clippy](https://github.com/Manishearth/rust-clippy), so this project is now obsolete.
+
+---
+
 more lints for rust
 
 This project aims to collect/add lints to rust, to help check for harmful or questionable idioms.
